@@ -1,0 +1,351 @@
+---
+title: "TabPFN: A Deep-Learning Solution for Tabular Data"
+subtitle: "R/Pharma"
+author:
+  - name: "Max Kuhn"
+    affiliation: "Posit PBC"
+date: "2025-11-05"    
+title-slide-attributes:
+  data-background-color: "#AD3D27FF"
+---
+
+```{r}
+#| label: start-tm
+#| include: false
+
+library(tidymodels)
+library(readr)
+
+tidymodels_prefer()
+theme_set(theme_bw())
+options(pillar.advice = FALSE, pillar.min_title_chars = Inf)
+
+predictions <-
+  read_csv("predictions_by_training_size_cuda.csv") |>
+  mutate(class = factor(class, levels = c("Yes", "No"))) |>
+  group_by(num_train) |>
+  mutate(.row = seq_along(class))
+
+timings <- read_csv("predictions_by_training_size_times_cuda.csv")
+```
+
+```{r}
+#| label: format-pkgs
+#| results: hide
+#| echo: false
+
+pkg <- function(x, cran = TRUE) {
+  cl <- match.call()
+  x <- as.character(cl$x)
+  pkg_chr(x, cran = cran)
+}
+
+pkg_chr <- function(x, cran = TRUE) {
+  if (cran) {
+    res <- glue::glue(
+      '<span class="pkg"><a href="https://cran.r-project.org/package={x}">{x}</a></span>'
+    )
+  } else {
+    res <- glue::glue('<span class="pkg">{x}</span>')
+  }
+  res
+}
+
+
+pkg_list <- function(x) {
+  x <- unique(x)
+  n <- length(x)
+  x <- x[order(tolower(x))]
+  x <- purrr::map_chr(x, ~ pkg_chr(.x))
+
+  req <- cli::pluralize(
+    "You’ll need {n} package{?s} ({x}) for this chapter. 
+                         You can install {?it/them} via:"
+  )
+  req
+}
+```
+
+# GitHub: `topepo/2025-r-pharma`  {background-color="#B25D91FF"}
+
+
+## TabPFN
+
+TabPFN is an unconventional deep learning (DL) framework for regression, classification, and density estimation. It stands for "Tabular Prior-data Fitted Network".
+
+<br>
+
+Two main references:
+
+- [_TabPFN: A Transformer That Solves Small Tabular Classification Problems in a Second_ (2022)](https://arxiv.org/abs/2207.01848) (original version)
+- [_Accurate predictions on small data with a tabular foundation model_ (2025)](https://scholar.google.com/scholar?hl=en&as_sdt=0%2C7&q=Accurate+predictions+on+small+data+with+a+tabular+foundation+model&btnG=) (version 2)
+
+## Data Priors
+
+In [Muller _et al_ (2022)](https://scholar.google.com/scholar?hl=en&as_sdt=0%2C7&q=TRANSFORMERS+CAN+DO+BAYESIAN+INFERENCE&btnG=), they determined that they can approximate Bayesian inference with a very complex deep learning (DL) model. 
+
+<br><br>
+
+The prior for their model is on _data sets_. They developed a system to generate synthetic data based on a causal graph that mimics common mechanisms that generate real-world data. 
+
+<br>
+
+In other words, their prior ($Pr[D]$ where $D$ is a data set) generates different types of data sets.
+
+## Possible elements of data priors
+
+For example, elements of the prior could simulate
+
+- Distributional effects: skewness, correlated multivariate data, sries correlation, imbalanced frequency distributions, outliers, etc. 
+- Missing data mechanisms.
+- Discretization. 
+- Latent/Hidden variables: PCA, PLS, etc. 
+- Functional relationships between predictors and outcomes (the "task" $T$). 
+
+<br>
+
+A sample from the prior generates a data set and it's predictive task. 
+
+## Deep learning Model
+
+Their Prior Fitted Network is a DL model that emulates Bayes' Rule
+
+$$
+p(y|x, D) = \underbrace{\int_T p(y|x, T) p(T|D)}_{\text{TabPFN DL Model}}
+$$
+
+where $T$ is the _task_, $D$ is the random data set variable, $x$ is a new input, and $y$ is its corresponding dependent variable. 
+
+<br>
+
+The resulting model requires **[no additional estimation]{.scarlet}** on _our data_ to produce predictions.
+
+## Attention
+
+The really important part of their model is that they include _attention mechanisms_ to model relationships across predictors (e.g. interactions) and across rows of data. 
+
+<br> 
+
+```{r}
+#| label: attention
+#| echo: false
+#| out-width: 90%
+knitr::include_graphics("tab-pfn-atttention.png")
+```
+
+<br>
+
+::: {.absolute bottom=0 right=0}
+Image from [Hollmann _et al_ (2025)](https://scholar.google.com/scholar?hl=en&as_sdt=0%2C7&q=Accurate+predictions+on+small+data+with+a+tabular+foundation+model&btnG=)
+:::
+
+
+## Attention
+
+The attention mechanisms function as a type of similarity search, generating weights for the network's parameters.
+
+<br>
+
+The parts of the DL model that are most relevant to our training set are upweighted, resulting in a kind of local prediction.  
+
+<br>
+
+In essence, the training set "primes the pump" so that the new instances use the most pertinent parts of the DL model. 
+
+## Performance
+
+Version 2 of the model was trained on 130 Million data sets.
+
+<br>
+
+It's intended use is for "small" data sets (as defined from the DL perspective). They suggest that it performs well for training sets with up to 10,000 samples and 500 features. 
+
+<br> 
+
+We've found that it ranks in the top five for every data set that I've applied it to. 
+
+
+## GPU Required
+
+Given the size/complexity of the DL model, the computations are very heavy. 
+
+<br>
+
+Unfortunately, without a (CUDA) GPU, the time to prediction is exorbitantly slow. 
+
+- If you are coming from the DL community, this is to be expected. 
+
+- However, from a "tabular" background, it can seem extreme to need expensive hardware to predict a few samples.  
+
+<br>
+
+That said, the GPU provides 100-fold speedups.  
+
+## Feature Selection Stability
+
+
+```{r}
+#| label: feature-selection
+#| echo: false
+#| out-width: 80%
+#| fig-width: 9
+#| fig-height: 5
+#| fig-align: "center"
+
+load("noise_simulation_results_pct.RData")
+
+noise_simulation_results_pct %>%
+  mutate(
+    `Automatic Feature Selection` = ifelse(fs, "Yes", "No"),
+    `Automatic Feature Selection` = ifelse(label == "TabPFN", "???", `Automatic Feature Selection`),
+    `Automatic Feature Selection` = factor(`Automatic Feature Selection`, levels = c("Yes", "No", "???"))
+    ) |> 
+  ggplot(aes(num_extra, increase)) +
+  geom_hline(yintercept = 0, col = "green", alpha = 1 / 2) +
+  geom_point(aes(col = `Automatic Feature Selection`)) +
+  geom_line(aes(col = `Automatic Feature Selection`)) +
+  facet_wrap(~label) +
+  labs(x = "# Noise Features", y = "Increase in RMSE (Testing)") +
+  scale_y_continuous(labels = scales::percent) +
+  scale_color_manual(values = c("#58A0D0FF", "#504848FF", "#E06858FF"))
+```
+
+<br> 
+
+::: {.absolute bottom=0 right=0}
+[Simulation sources](https://github.com/topepo/noise_features_sim), [AML4TD chapter](https://aml4td.org/chapters/feature-selection.html#sec-irrelevant-predictors)
+:::
+
+## Stability by "Training Set" Size
+
+
+```{r}
+#| label: metrics-over-training-size
+#| echo: false
+#| out-width: 40%
+#| fig-width: 7
+#| fig-height: 7
+#| fig-align: "center"
+
+predictions <-
+  read_csv("predictions_by_training_size_cuda.csv") |>
+  mutate(class = factor(class, levels = c("Yes", "No"))) |>
+  group_by(num_train) |>
+  mutate(.row = seq_along(class))
+
+timings <- read_csv("predictions_by_training_size_times_cuda.csv")
+
+predictions |>
+  metric_set(brier_class, roc_auc)(class, .pred_Yes) |>
+  bind_rows(timings |> mutate(.estimate = time, .metric = "Prediction Time (s)")) |> 
+  mutate(
+    results = case_when(
+      .metric == "brier_class" ~ "Brier Score",
+      .metric == "roc_auc" ~ "ROC AUC",
+      TRUE ~ "Prediction Time (s)"
+    ),
+    results = factor(results, levels = c("Brier Score", "ROC AUC", "Prediction Time (s)"))
+  ) |> 
+  filter(num_train > 2) |> 
+  ggplot(aes(num_train, .estimate)) +
+  geom_point(alpha = 1 / 5) +
+  geom_smooth(se = FALSE, span = .3) +
+  scale_x_log10() +
+  facet_wrap(~ results, scale = "free_y", ncol = 1) + 
+  labs(y = NULL, x = "Training Set Size")
+```
+
+## Stability by "Training Set" Size
+
+```{r}
+#| label: estimates-over-training-size
+#| echo: false
+#| out-width: 40%
+#| fig-width: 9
+#| fig-height: 7
+#| fig-align: "center"
+
+set.seed(12)
+examples <- sample.int(length(unique(predictions$.row)), 12)
+
+example_df <-
+  predictions |>
+  ungroup() |>
+  filter(.row %in% examples)
+
+last_prob <-
+  example_df |>
+  filter(num_train == max(num_train)) |>
+  select(.row, last_prob = .pred_Yes)
+
+example_df |>
+  full_join(last_prob, by = ".row") |>
+  mutate(
+    example = factor(paste("Row", .row)),
+    example = reorder(example, last_prob)
+  ) |>
+  ggplot(aes(num_train, .pred_Yes)) +
+  geom_point(alpha = 1 / 5) +
+  geom_smooth(se = FALSE, span = .3, col = "darkred") +
+  facet_wrap(~example) +
+  scale_x_log10() +
+  labs(y = "Class Probability Estimate", x = "Training Set Size")
+```
+
+
+## Other Aspects of the Model
+
+Important features that we didn't have time to discuss: 
+
+- (Actual) Inference 
+- Ensembling
+- Variable Importance
+- Explainability via Shapley values
+
+## Software
+
+The inventors have a Python library at [`github.com/PriorLabs/TabPFN`](https://github.com/PriorLabs/TabPFN) and I've made an initial port to R (via reticulate) at [`github.com/topepo/TabPFN`](https://github.com/topepo/TabPFN):
+
+<br>
+
+:::: {.columns}
+
+::: {.column width="45%"}
+Python:
+
+```python
+import tabpfn
+
+# Initialize a classifier
+clf = tabpfn.TabPFNClassifier()
+clf.fit(X_train, y_train)
+
+# Predict probabilities
+clf.predict_proba(X_test)
+```
+:::
+
+::: {.column width="55%"}
+R: 
+
+```R
+library(TabPFN)
+
+# Initialize a classifier
+cls_mod <- tab_pfn(class ~ ., data = dat)
+
+# Predict probabilities
+predict(cls_mod, grid)
+```
+:::
+
+::::
+
+
+## Thanks
+
+Thanks for the invitation to speak today!
+
+<br> 
+
+Thanks to others at Posit that helped: Simon Couch, Daniel Falbel, and Tomasz Kalinowski. 

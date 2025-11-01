@@ -1,0 +1,26 @@
+project:
+  title: "TabPFN: A Deep-Learning Solution for Tabular Data?"
+  output-dir: docs
+
+format:
+  revealjs:
+    slide-number: true
+    theme: [tidymodels.scss]
+    width: 1280
+    height: 720
+    show-notes: false
+    pdf-max-pages-per-slide: 1
+
+knitr:
+  opts_chunk:
+    echo: true
+    collapse: true
+    comment: "#>"
+    fig.path: "figures/"
+    dev: 'svg'
+
+fig-format: svg
+
+html-math-method:
+  method: mathjax
+  url: "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"
