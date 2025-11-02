@@ -71,7 +71,7 @@ pkg_list <- function(x) {
 
 ## TabPFN
 
-TabPFN is an unconventional deep learning (DL) framework for regression, classification, and density estimation. It stands for "Tabular Prior-data Fitted Network".
+TabPFN is an unconventional deep learning (DL) framework for regression, classification, and density estimation. It stands for "TABular Prior-data Fitted Network".
 
 <br>
 
@@ -92,33 +92,36 @@ The prior for their model is on _data sets_. They developed a system to generate
 
 In other words, their prior ($Pr[D]$ where $D$ is a data set) generates different types of data sets.
 
-## Possible elements of data priors
+## _Possible_ Elements of Data Priors
 
 For example, elements of the prior could simulate
 
-- Distributional effects: skewness, correlated multivariate data, sries correlation, imbalanced frequency distributions, outliers, etc. 
+- Distributional effects: skewness, correlated multivariate data, serial correlation, imbalanced frequency distributions, outliers, etc. 
 - Missing data mechanisms.
 - Discretization. 
 - Latent/Hidden variables: PCA, PLS, etc. 
 - Functional relationships between predictors and outcomes (the "task" $T$). 
-
-<br>
+- Random error
 
 A sample from the prior generates a data set and it's predictive task. 
 
-## Deep learning Model
+## Deep Learning Model
 
 Their Prior Fitted Network is a DL model that emulates Bayes' Rule
 
 $$
-p(y|x, D) = \underbrace{\int_T p(y|x, T) p(T|D)}_{\text{TabPFN DL Model}}
+\underbrace{p(y|x, D)}_{\text{Approximate Posterior Distribution}} = \underbrace{\int_T p(y|x, T) p(T|D)}_{\text{TabPFN DL Model}}
 $$
 
 where $T$ is the _task_, $D$ is the random data set variable, $x$ is a new input, and $y$ is its corresponding dependent variable. 
 
-<br>
+. . . 
 
-The resulting model requires **[no additional estimation]{.scarlet}** on _our data_ to produce predictions.
+TabPFV V2 uses _130 Million_ realizations of $[D, T]$. 
+
+. . . 
+
+The resulting model requires **[no additional estimation]{.scarlet}** on _our data_ $(y, x)$ to produce predictions.
 
 ## Attention
 
@@ -152,7 +155,7 @@ The parts of the DL model that are most relevant to our training set are upweigh
 
 In essence, the training set "primes the pump" so that the new instances use the most pertinent parts of the DL model. 
 
-## Performance
+## Predictive Performance
 
 Version 2 of the model was trained on 130 Million data sets.
 
@@ -218,13 +221,20 @@ noise_simulation_results_pct %>%
 
 ## Stability by "Training Set" Size
 
+:::: {.columns}
+
+::: {.column width="27%"}
+
+:::
+
+::: {.column width="46%"}
 
 ```{r}
 #| label: metrics-over-training-size
 #| echo: false
-#| out-width: 40%
-#| fig-width: 7
-#| fig-height: 7
+#| out-width: 100%
+#| fig-width: 5
+#| fig-height: 5
 #| fig-align: "center"
 
 predictions <-
@@ -254,6 +264,22 @@ predictions |>
   facet_wrap(~ results, scale = "free_y", ncol = 1) + 
   labs(y = NULL, x = "Training Set Size")
 ```
+
+:::
+
+::: {.column width="27%"}
+<br> 
+<br>
+
+Training set is 4,832 samples. 
+
+<br>
+
+The holdout is 1,371 samples.
+:::
+
+::::
+
 
 ## Stability by "Training Set" Size
 
@@ -335,7 +361,7 @@ library(TabPFN)
 cls_mod <- tab_pfn(class ~ ., data = dat)
 
 # Predict probabilities
-predict(cls_mod, grid)
+predict(cls_mod, X_test)
 ```
 :::
 

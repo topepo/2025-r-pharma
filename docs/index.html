@@ -217,7 +217,7 @@ Max Kuhn
 </section>
 <section id="tabpfn" class="slide level2">
 <h2>TabPFN</h2>
-<p>TabPFN is an unconventional deep learning (DL) framework for regression, classification, and density estimation. It stands for “Tabular Prior-data Fitted Network”.</p>
+<p>TabPFN is an unconventional deep learning (DL) framework for regression, classification, and density estimation. It stands for “TABular Prior-data Fitted Network”.</p>
 <p><br></p>
 <p>Two main references:</p>
 <ul>
@@ -234,27 +234,31 @@ Max Kuhn
 <p>In other words, their prior (<span class="math inline">\(Pr[D]\)</span> where <span class="math inline">\(D\)</span> is a data set) generates different types of data sets.</p>
 </section>
 <section id="possible-elements-of-data-priors" class="slide level2">
-<h2>Possible elements of data priors</h2>
+<h2><em>Possible</em> Elements of Data Priors</h2>
 <p>For example, elements of the prior could simulate</p>
 <ul>
-<li>Distributional effects: skewness, correlated multivariate data, sries correlation, imbalanced frequency distributions, outliers, etc.</li>
+<li>Distributional effects: skewness, correlated multivariate data, serial correlation, imbalanced frequency distributions, outliers, etc.</li>
 <li>Missing data mechanisms.</li>
 <li>Discretization.</li>
 <li>Latent/Hidden variables: PCA, PLS, etc.</li>
 <li>Functional relationships between predictors and outcomes (the “task” <span class="math inline">\(T\)</span>).</li>
+<li>Random error</li>
 </ul>
-<p><br></p>
 <p>A sample from the prior generates a data set and it’s predictive task.</p>
 </section>
 <section id="deep-learning-model" class="slide level2">
-<h2>Deep learning Model</h2>
+<h2>Deep Learning Model</h2>
 <p>Their Prior Fitted Network is a DL model that emulates Bayes’ Rule</p>
 <p><span class="math display">\[
-p(y|x, D) = \underbrace{\int_T p(y|x, T) p(T|D)}_{\text{TabPFN DL Model}}
+\underbrace{p(y|x, D)}_{\text{Approximate Posterior Distribution}} = \underbrace{\int_T p(y|x, T) p(T|D)}_{\text{TabPFN DL Model}}
 \]</span></p>
 <p>where <span class="math inline">\(T\)</span> is the <em>task</em>, <span class="math inline">\(D\)</span> is the random data set variable, <span class="math inline">\(x\)</span> is a new input, and <span class="math inline">\(y\)</span> is its corresponding dependent variable.</p>
-<p><br></p>
-<p>The resulting model requires <strong><span class="scarlet">no additional estimation</span></strong> on <em>our data</em> to produce predictions.</p>
+<div class="fragment">
+<p>TabPFV V2 uses <em>130 Million</em> realizations of <span class="math inline">\([D, T]\)</span>.</p>
+</div>
+<div class="fragment">
+<p>The resulting model requires <strong><span class="scarlet">no additional estimation</span></strong> on <em>our data</em> <span class="math inline">\((y, x)\)</span> to produce predictions.</p>
+</div>
 </section>
 <section id="attention" class="slide level2">
 <h2>Attention</h2>
@@ -274,8 +278,8 @@ p(y|x, D) = \underbrace{\int_T p(y|x, T) p(T|D)}_{\text{TabPFN DL Model}}
 <p><br></p>
 <p>In essence, the training set “primes the pump” so that the new instances use the most pertinent parts of the DL model.</p>
 </section>
-<section id="performance" class="slide level2">
-<h2>Performance</h2>
+<section id="predictive-performance" class="slide level2">
+<h2>Predictive Performance</h2>
 <p>Version 2 of the model was trained on 130 Million data sets.</p>
 <p><br></p>
 <p>It’s intended use is for “small” data sets (as defined from the DL perspective). They suggest that it performs well for training sets with up to 10,000 samples and 500 features.</p>
@@ -304,8 +308,26 @@ p(y|x, D) = \underbrace{\int_T p(y|x, T) p(T|D)}_{\text{TabPFN DL Model}}
 </section>
 <section id="stability-by-training-set-size" class="slide level2">
 <h2>Stability by “Training Set” Size</h2>
+<div class="columns">
+<div class="column" style="width:27%;">
 
-<img data-src="figures/metrics-over-training-size-1.svg" class="quarto-figure quarto-figure-center r-stretch" style="width:40.0%"></section>
+</div><div class="column" style="width:46%;">
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure>
+<p><img data-src="figures/metrics-over-training-size-1.svg" class="quarto-figure quarto-figure-center" style="width:100.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+</div><div class="column" style="width:27%;">
+<p><br> <br></p>
+<p>Training set is 4,832 samples.</p>
+<p><br></p>
+<p>The holdout is 1,371 samples.</p>
+</div></div>
+</section>
 <section id="stability-by-training-set-size-1" class="slide level2">
 <h2>Stability by “Training Set” Size</h2>
 
@@ -343,7 +365,7 @@ p(y|x, D) = \underbrace{\int_T p(y|x, T) p(T|D)}_{\text{TabPFN DL Model}}
 <span id="cb2-4"><a href=""></a>cls_mod <span class="ot">&lt;-</span> <span class="fu">tab_pfn</span>(class <span class="sc">~</span> ., <span class="at">data =</span> dat)</span>
 <span id="cb2-5"><a href=""></a></span>
 <span id="cb2-6"><a href=""></a><span class="co"># Predict probabilities</span></span>
-<span id="cb2-7"><a href=""></a><span class="fu">predict</span>(cls_mod, grid)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb2-7"><a href=""></a><span class="fu">predict</span>(cls_mod, X_test)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div></div>
 </section>
 <section id="thanks" class="slide level2">
