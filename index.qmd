@@ -86,7 +86,7 @@ In [Muller _et al_ (2022)](https://scholar.google.com/scholar?hl=en&as_sdt=0%2C7
 
 <br><br>
 
-The prior for their model is on _data sets_. They developed a system to generate synthetic data based on a causal graph that mimics common mechanisms that generate real-world data. 
+The prior for their model is on _data sets_. They developed a system to generate synthetic data based on a _causal graph_ that mimics common mechanisms that generate real-world data. 
 
 <br>
 
