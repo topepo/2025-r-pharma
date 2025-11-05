@@ -117,7 +117,7 @@ where $T$ is the _task_, $D$ is the random data set variable, $x$ is a new input
 
 . . . 
 
-TabPFV V2 uses _130 Million_ realizations of $[D, T]$. 
+TabPFN V2 uses _130 Million_ realizations of $[D, T]$. 
 
 . . . 
 
@@ -161,7 +161,7 @@ Version 2 of the model was trained on 130 Million data sets.
 
 <br>
 
-It's intended use is for "small" data sets (as defined from the DL perspective). They suggest that it performs well for training sets with up to 10,000 samples and 500 features. 
+It's intended use is for "small" data sets (as defined from the DL perspective). They suggest that it performs well for training sets with up to 10,000 samples, 500 features, and 10 classes. 
 
 <br> 
 
